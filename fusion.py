@@ -4,7 +4,9 @@ import numpy as np
 
 from numba import njit, prange
 from skimage import measure
-
+import pydisco_utils
+import ipdb 
+st = ipdb.set_trace
 try:
   import pycuda.driver as cuda
   import pycuda.autoinit
@@ -33,7 +35,7 @@ class TSDFVolume:
     # Define voxel volume parameters
     self._vol_bnds = vol_bnds
     self._voxel_size = float(voxel_size)
-    self._trunc_margin = 5 * self._voxel_size  # truncation on SDF
+    self._trunc_margin = 10 * self._voxel_size  # truncation on SDF
     self._color_const = 256 * 256
 
     # Adjust volume bounds and ensure C-order contiguous
@@ -203,6 +205,22 @@ class TSDFVolume:
       w_new[i] = w_old[i] + obs_weight
       tsdf_vol_int[i] = (w_old[i] * tsdf_vol[i] + obs_weight * dist[i]) / w_new[i]
     return tsdf_vol_int, w_new
+
+  def visualize_inside_points(self):
+    occupied_pts_x, occupied_pts_y, occupied_pts_z = np.where(self._tsdf_vol_cpu < 0)
+    occupied_pts = np.stack([occupied_pts_x, occupied_pts_y, occupied_pts_z], axis=-1)
+    cam_pts = self.vox2world(self._vol_origin, occupied_pts, self._voxel_size)
+    pydisco_utils.visualize_o3d(np.expand_dims(cam_pts, axis=0))
+
+  def visualize_outside_points(self):
+    cond1 = self._tsdf_vol_cpu > 0
+    cond2 = self._tsdf_vol_cpu < 1
+    cond = cond1 & cond2
+    occupied_pts_x, occupied_pts_y, occupied_pts_z = np.where(cond>0)
+    occupied_pts = np.stack([occupied_pts_x, occupied_pts_y, occupied_pts_z], axis=-1)
+    cam_pts = self.vox2world(self._vol_origin, occupied_pts, self._voxel_size)
+    pydisco_utils.visualize_o3d(np.expand_dims(cam_pts, axis=0))
+
 
   def integrate(self, color_im, depth_im, cam_intr, cam_pose, obs_weight=1.):
     """Integrate an RGB-D frame into the TSDF volume.
