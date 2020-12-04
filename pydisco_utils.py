@@ -1,5 +1,11 @@
-# import open3d as o3d
+
 import torch 
+import socket 
+import ipdb 
+st = ipdb.set_trace
+hostname = socket.gethostname()
+if 'Shamit' in hostname:
+    import open3d as o3d
 
 def sub2ind(height, width, y, x):
     return y*width + x
@@ -178,3 +184,27 @@ def normalize_grid2D(grid_y, grid_x, Y, X, clamp_extreme=True):
         grid_x = torch.clamp(grid_x, min=-2.0, max=2.0)
         
     return grid_y, grid_x
+
+def get_freespace_points(xyz_camXs, origin_T_camXs):
+    # S, N, _ = xyz_camXs.shape
+    # xyz_camXs = xyz_camXs.reshape(S,N,3,1)
+    alpha = torch.linspace(0.1, 0.9, 10).reshape(1,1,-1).to(torch.device('cuda'))
+    # samples = xyz_camXs*alpha
+    samples_list = []
+    for i, xyz_camX in enumerate(xyz_camXs):
+        x, y, z = torch.unbind(xyz_camX, dim=-1)
+        valid = torch.where(z<100)[0]
+        x = x[valid]
+        y = y[valid]
+        z = z[valid]
+        xyz_camX = torch.stack([x,y,z], dim=-1)
+        N, _ = xyz_camX.shape
+        xyz_camX = xyz_camX.reshape(N,3,1)
+        samples = xyz_camX*alpha
+        samples = samples.permute(0,2,1)
+        samples = samples.reshape(-1, 3)
+        samples = apply_4x4(origin_T_camXs[i:i+1].float(), samples.unsqueeze(0))[0]
+        samples_list.append(samples)
+
+    samples_list = torch.cat(samples_list, dim=0)
+    return samples_list

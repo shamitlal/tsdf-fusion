@@ -27,11 +27,11 @@ if __name__ == "__main__":
     # frustums in the dataset
     # ======================================================================================================== #
     print("Estimating voxel volume bounds...")
-    device = torch.device('cuda')
+    device = torch.device('cpu')
     # n_imgs = 1000
     max_depth = 10
-    data = pickle.load(open('15885535820614111.p', "rb"))
-    # data = pickle.load(open("/Users/shamitlal/Desktop/temp/tsdf/raw/15885526665708954.p", "rb"))
+    # data = pickle.load(open('15885535820614111.p', "rb"))
+    data = pickle.load(open("/Users/shamitlal/Desktop/temp/tsdf/raw/15885526665708954.p", "rb"))
     # cam_intr = np.loadtxt("data/camera-intrinsics.txt", delimiter=' ')
     cam_intr = data['pix_T_cams_raw'][0, :3, :3]
     cam_poses = data['origin_T_camXs_raw']
@@ -74,8 +74,9 @@ if __name__ == "__main__":
     # ======================================================================================================== #
     # Initialize voxel volume
     print("Initializing voxel volume...")
+    print("bounds are: ", vol_bnds)
     # tsdf_vol = fusion.TSDFVolume(vol_bnds, voxel_size=0.02)
-    tsdf_vol = fusion.TSDFVolume(vol_bnds, voxel_size=0.1)
+    tsdf_vol = fusion.TSDFVolume(vol_bnds, voxel_size=0.05)
 
     # Loop through RGB-D images and fuse them together
     t0_elapse = time.time()
@@ -100,15 +101,17 @@ if __name__ == "__main__":
     print("Average FPS: {:.2f}".format(fps))
 
     # Get mesh from voxel volume and save to disk (can be viewed with Meshlab)
-    print("Saving mesh to mesh.ply...")
-    verts, faces, norms, colors = tsdf_vol.get_mesh()
-    fusion.meshwrite("mesh.ply", verts, faces, norms, colors)
+    # print("Saving mesh to mesh.ply...")
+    verts, faces, norms, colors = tsdf_vol.get_mesh() # somehow this is required for inside outside to work
+    # fusion.meshwrite("mesh.ply", verts, faces, norms, colors)
 
-    # Get point cloud from voxel volume and save to disk (can be viewed with Meshlab)
-    print("Saving point cloud to pc.ply...")
-    point_cloud = tsdf_vol.get_point_cloud()
-    fusion.pcwrite("pc.ply", point_cloud)
+    # # Get point cloud from voxel volume and save to disk (can be viewed with Meshlab)
+    # print("Saving point cloud to pc.ply...")
+    # point_cloud = tsdf_vol.get_point_cloud()
+    # fusion.pcwrite("pc.ply", point_cloud)
 
     # Get volume and sample points near surface
-    # tsdf_vol.visualize_inside_points()
-    # tsdf_vol.visualize_outside_points()
+    inside_pts = tsdf_vol.visualize_inside_points()
+    outside_pts = tsdf_vol.visualize_outside_points()
+    data = {"inside":inside_pts, "outside":outside_pts}
+    pickle.dump(data,open("tsdf.p","wb"))

@@ -207,10 +207,11 @@ class TSDFVolume:
     return tsdf_vol_int, w_new
 
   def visualize_inside_points(self):
-    occupied_pts_x, occupied_pts_y, occupied_pts_z = np.where(self._tsdf_vol_cpu < 0)
+    occupied_pts_x, occupied_pts_y, occupied_pts_z = np.where(self._tsdf_vol_cpu <= 0)
     occupied_pts = np.stack([occupied_pts_x, occupied_pts_y, occupied_pts_z], axis=-1)
     cam_pts = self.vox2world(self._vol_origin, occupied_pts, self._voxel_size)
-    pydisco_utils.visualize_o3d(np.expand_dims(cam_pts, axis=0))
+    return cam_pts
+    # pydisco_utils.visualize_o3d(np.expand_dims(cam_pts, axis=0))
 
   def visualize_outside_points(self):
     cond1 = self._tsdf_vol_cpu > 0
@@ -219,7 +220,8 @@ class TSDFVolume:
     occupied_pts_x, occupied_pts_y, occupied_pts_z = np.where(cond>0)
     occupied_pts = np.stack([occupied_pts_x, occupied_pts_y, occupied_pts_z], axis=-1)
     cam_pts = self.vox2world(self._vol_origin, occupied_pts, self._voxel_size)
-    pydisco_utils.visualize_o3d(np.expand_dims(cam_pts, axis=0))
+    return cam_pts
+    # pydisco_utils.visualize_o3d(np.expand_dims(cam_pts, axis=0))
 
 
   def integrate(self, color_im, depth_im, cam_intr, cam_pose, obs_weight=1.):

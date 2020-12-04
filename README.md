@@ -49,3 +49,10 @@ This repository is a part of [3DMatch Toolbox](https://github.com/andyzeng/3dmat
     year={2017}
 }
 ```
+
+## pydisco
+ssh cmu1
+
+conda activate tsdf_new
+
+python carla_tsdf_gen.py
