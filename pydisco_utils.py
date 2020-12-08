@@ -93,7 +93,7 @@ def apply_4x4(RT, xyz):
 
 def visualize_o3d(xyz_camX):
     pcd = make_pcd(xyz_camX[0])
-    mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
+    mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=5.0, origin=[0, 0, 0])
     o3d.visualization.draw_geometries([pcd, mesh_frame])
 
 def make_pcd(pts):
@@ -208,3 +208,13 @@ def get_freespace_points(xyz_camXs, origin_T_camXs):
 
     samples_list = torch.cat(samples_list, dim=0)
     return samples_list
+
+def safe_inverse(a): #parallel version
+    B, _, _ = list(a.shape)
+    inv = a.clone()
+    r_transpose = a[:, :3, :3].transpose(1,2) #inverse of rotation matrix
+
+    inv[:, :3, :3] = r_transpose
+    inv[:, :3, 3:4] = -torch.matmul(r_transpose, a[:, :3, 3:4])
+
+    return inv
