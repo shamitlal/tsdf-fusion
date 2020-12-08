@@ -55,4 +55,8 @@ ssh cmu1
 
 conda activate tsdf_new
 
-python carla_tsdf_gen.py
+python carla_tsdf_gen.py # For 3dq data format
+
+python carla_tsdf_gen_complete.py # For 'complete' carla data format
+
+
